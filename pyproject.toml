@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "irelay-interceptor"
+name = "irelay-mqtt"
 version = "0.1.0"
 description = ""
 authors = ["Tom Homewood."]
