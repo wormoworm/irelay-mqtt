@@ -1,0 +1,12 @@
+# Example compose file for the JMRI roster application stack.
+version: "2.2"
+
+services:
+  
+  api:
+    image: tomhomewood/irelay-interceptor:latest
+    container_name: irelay-interceptor
+    restart: unless-stopped
+    cpu_count: 2
+    mem_limit: 256m
+    network_mode: "host"
