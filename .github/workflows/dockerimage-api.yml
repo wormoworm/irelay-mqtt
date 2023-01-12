@@ -1,0 +1,23 @@
+name: api-docker-build-publish
+
+on: [push]
+
+jobs:
+
+  build-publish-api:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Publish README to DockerHub
+      run: docker run --rm -v ${{ github.workspace }}/README-api.md:/data/README.md -e DOCKERHUB_USERNAME=tomhomewood -e DOCKERHUB_PASSWORD=${{ secrets.DOCKER_PASSWORD }} -e DOCKERHUB_REPO_NAME=irelay-mqtt sheogorath/readme-to-dockerhub
+    - name: Build the Docker image
+      run: docker build . --file docker/Dockerfile-api --tag tomhomewood/irelay-mqtt:latest
+    - name: Docker Push
+      uses: opspresso/action-docker@v0.2.2
+      env:
+          USERNAME: tomhomewood
+          PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          IMAGE_NAME: "tomhomewood/irelay-mqtt"
+          TAG_NAME: "latest"

@@ -1,0 +1,7 @@
+Readme
+
+GitHub action Docker publish
+
+Code tidy up
+
+Return codes in case of error
