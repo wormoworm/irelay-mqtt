@@ -11,7 +11,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Publish README to DockerHub
-      run: docker run --rm -v ${{ github.workspace }}/README-api.md:/data/README.md -e DOCKERHUB_USERNAME=tomhomewood -e DOCKERHUB_PASSWORD=${{ secrets.DOCKER_PASSWORD }} -e DOCKERHUB_REPO_NAME=irelay-mqtt sheogorath/readme-to-dockerhub
+      run: docker run --rm -v ${{ github.workspace }}/README.md:/data/README.md -e DOCKERHUB_USERNAME=tomhomewood -e DOCKERHUB_PASSWORD=${{ secrets.DOCKER_PASSWORD }} -e DOCKERHUB_REPO_NAME=irelay-mqtt sheogorath/readme-to-dockerhub
     - name: Build the Docker image
       run: docker build . --file docker/Dockerfile-api --tag tomhomewood/irelay-mqtt:latest
     - name: Docker Push
