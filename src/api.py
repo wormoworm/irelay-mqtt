@@ -101,5 +101,11 @@ def nautilis(report: NautilisReport):
 
 @app.post("/custom")
 def dummy(request_dict: Union[List,Dict,Any] = None):
-    logging.warn(f"Query dict: {request_dict}")
+    logging.warn(f"/custom: {request_dict}")
+    return {"a": "b"}
+
+
+@app.post("/custom2")
+def dummy(request_dict: Union[List,Dict,Any] = None):
+    logging.warn(f"/custom2: {request_dict}")
     return {"a": "b"}
