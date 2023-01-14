@@ -97,3 +97,9 @@ def nautilis(report: NautilisReport):
         disconnect_from_mqtt()
     # TODO Return error code if MQTT connection failed.
     return '{"message": "ok"}'
+
+
+@app.post("/custom")
+def dummy(request_dict: Union[List,Dict,Any] = None):
+    logging.warn(f"Query dict: {request_dict}")
+    return {"a": "b"}
