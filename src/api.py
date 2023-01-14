@@ -6,45 +6,16 @@ import logging
 from rich.logging import RichHandler
 import os
 from paho.mqtt.client import Client
+from model.mqtt_config import MqttConfig
+from model.ispindel import IspindelReport
+from model.nautilis import NautilisReport
 
 # TODO: Allow passing of topics via env vars.
 TOPIC_FORMAT_ISPINDEL_REPORT= "devices/ispindel/channel/{}/data"
 TOPIC_NAUTILIS_REPORT= "devices/nautilis/data"
 
-class IspindelReport(BaseModel):
-    ID: int
-    name: str
-    RSSI: int
-    battery: float
-    interval: int
-    angle: float
-    gravity: float
-    temperature: float
-    temp_units: str
-
-    def get_channel_number(self) -> int:
-        if self.name[0] == '1':
-            return 1
-        elif self.name[0] == '2':
-            return 2
-        else:
-            return None
 
 
-class NautilisReport(BaseModel):
-    temperature: float
-    unit: str
-
-
-class MqttConfig:
-    """Contains config data used to connect to MQTT."""
-
-    def __init__(self, endpoint: str, port: int, client_id: str, username: str, password: str) -> None:
-        self.endpoint = endpoint
-        self.port = port
-        self.client_id = client_id
-        self.username = username
-        self.password = password
 
 
 DEBUG = os.getenv("DEBUG", "True").lower() == "true"
@@ -73,6 +44,7 @@ def connect_to_mqtt() -> bool:
 def disconnect_from_mqtt() -> bool:
     return mqtt_client.disconnect() == 0
 
+
 @app.post("/api/ispindel")
 def data_ispindel(report: IspindelReport):
     ispindel_channel_number = report.get_channel_number()
@@ -99,13 +71,7 @@ def nautilis(report: NautilisReport):
     return '{"message": "ok"}'
 
 
-@app.post("/custom")
+@app.post("/test")
 def dummy(request_dict: Union[List,Dict,Any] = None):
-    logging.warn(f"/custom: {request_dict}")
-    return {"a": "b"}
-
-
-@app.post("/custom2")
-def dummy(request_dict: Union[List,Dict,Any] = None):
-    logging.warn(f"/custom2: {request_dict}")
+    logging.warn(f"/test: {request_dict}")
     return {"a": "b"}
