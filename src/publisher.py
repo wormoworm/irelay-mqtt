@@ -8,6 +8,7 @@ from rich.logging import RichHandler
 import os
 import sys
 import signal
+import time
 from paho.mqtt.client import Client
 from model.mqtt_config import MqttConfig
 from model.http_config import HttpConfig
@@ -38,8 +39,11 @@ HTTP_ENDPOINT = os.getenv("HTTP_ENDPOINT")
 HTTP_PATH_ISPINDEL_CHANNEL_1 = os.getenv("HTTP_PATH_ISPINDEL_CHANNEL_1")
 HTTP_PATH_ISPINDEL_CHANNEL_2 = os.getenv("HTTP_PATH_ISPINDEL_CHANNEL_2")
 HTTP_PATH_NAUTILIS = os.getenv("HTTP_PATH_NAUTILIS")
+HTTP_MIN_PUBLICATION_INTERVAL = os.getenv("HTTP_MIN_PUBLICATION_INTERVAL", default = 15 * 60)
 
 class IrelayPublisher:
+
+    publication_timestamps = dict()
     
     def _os_signal_handler(self, signum, frame):
         """Handle OS signal"""
@@ -119,9 +123,13 @@ class IrelayPublisher:
         ispindel_url = self.http_config.get_ispindel_url(channel)
         logging.debug(f"iSpindel URL for channel {channel} is {ispindel_url}")
         if ispindel_url:
-            logging.debug(f"Will publish to {ispindel_url}")
-            response = requests.post(url = ispindel_url, data = json.dumps(report.dict()), headers={"Content-Type":"application/json"})
-            logging.debug(f"Response code from server: {response.status_code}")
+            if self.should_publish(ispindel_url):
+                logging.debug(f"Will publish to {ispindel_url}")
+                response = requests.post(url = ispindel_url, data = json.dumps(report.dict()), headers={"Content-Type":"application/json"})
+                logging.debug(f"Response code from server: {response.status_code}")
+                self.set_publication_timestamp(ispindel_url)
+            else:
+                logging.debug(f"Skipped publication for URL {ispindel_url}.")
         else:
             logging.error(f"Could not get URL for iSpindel with channel {channel}")
     
@@ -130,11 +138,29 @@ class IrelayPublisher:
         logging.debug("Processing Nautilis report")
         nautilis_url = self.http_config.get_nautilis_url()
         if nautilis_url:
-            logging.debug(f"Will publish to {nautilis_url}")
-            response = requests.post(url = nautilis_url, data = json.dumps(report.dict()), headers={"Content-Type":"application/json"})
-            logging.debug(f"Response code from server: {response.status_code}")
+            if self.should_publish(nautilis_url):
+                logging.debug(f"Will publish to {nautilis_url}")
+                response = requests.post(url = nautilis_url, data = json.dumps(report.dict()), headers={"Content-Type":"application/json"})
+                logging.debug(f"Response code from server: {response.status_code}")
+                self.set_publication_timestamp(nautilis_url)
+            else:
+                logging.debug(f"Skipped publication for URL {nautilis_url}.")
         else:
             logging.error(f"Could not get URL for Nautilis")
+    
+
+    def set_publication_timestamp(self, key: str, timestamp: int = time.time()):
+        self.publication_timestamps[key] = timestamp
+
+
+    def get_publication_timestamp(self, key: str) -> int:
+        return self.publication_timestamps.get(key, default = 0)
+    
+
+    def should_publish(self, key: str, timestamp_to_check: int = time.time()) -> bool:
+        time_since_last_publication_s = timestamp_to_check - self.get_publication_timestamp(key)
+        logging.debug(f"Time since last publication: {time_since_last_publication_s}, min interval: {self.http_config.min_publication_interval_s}")
+        return time_since_last_publication_s >= self.http_config.min_publication_interval_s
 
 
 """Entrypoint"""
@@ -156,6 +182,6 @@ if __name__ == "__main__":
         "1": HTTP_PATH_ISPINDEL_CHANNEL_1,
         "2": HTTP_PATH_ISPINDEL_CHANNEL_2
     }
-    http_config = HttpConfig(HTTP_ENDPOINT, ispindel_http_paths, HTTP_PATH_NAUTILIS)
+    http_config = HttpConfig(HTTP_ENDPOINT, ispindel_http_paths, HTTP_PATH_NAUTILIS, HTTP_MIN_PUBLICATION_INTERVAL)
 
     linakMqtt = IrelayPublisher(mqtt_config, http_config)
