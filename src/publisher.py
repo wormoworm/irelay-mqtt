@@ -123,11 +123,11 @@ class IrelayPublisher:
         ispindel_url = self.http_config.get_ispindel_url(channel)
         logging.debug(f"iSpindel URL for channel {channel} is {ispindel_url}")
         if ispindel_url:
-            if self.should_publish(ispindel_url):
+            if self.should_publish(ispindel_url, int(time.time())):
                 logging.debug(f"Will publish to {ispindel_url}")
                 response = requests.post(url = ispindel_url, data = json.dumps(report.dict()), headers={"Content-Type":"application/json"})
                 logging.debug(f"Response code from server: {response.status_code}")
-                self.set_publication_timestamp(ispindel_url)
+                self.set_publication_timestamp(ispindel_url, int(time.time()))
             else:
                 logging.debug(f"Skipped publication for URL {ispindel_url}.")
         else:
@@ -138,26 +138,31 @@ class IrelayPublisher:
         logging.debug("Processing Nautilis report")
         nautilis_url = self.http_config.get_nautilis_url()
         if nautilis_url:
-            if self.should_publish(nautilis_url):
+            if self.should_publish(nautilis_url, int(time.time())):
                 logging.debug(f"Will publish to {nautilis_url}")
                 response = requests.post(url = nautilis_url, data = json.dumps(report.dict()), headers={"Content-Type":"application/json"})
                 logging.debug(f"Response code from server: {response.status_code}")
-                self.set_publication_timestamp(nautilis_url)
+                self.set_publication_timestamp(nautilis_url, int(time.time()))
             else:
                 logging.debug(f"Skipped publication for URL {nautilis_url}.")
         else:
             logging.error(f"Could not get URL for Nautilis")
     
 
-    def set_publication_timestamp(self, key: str, timestamp: int = time.time()):
+    def set_publication_timestamp(self, key: str, timestamp: int):
         self.publication_timestamps[key] = timestamp
+        print(self.publication_timestamps)
 
 
     def get_publication_timestamp(self, key: str) -> int:
-        return self.publication_timestamps.get(key, default = 0)
+        timestamp = self.publication_timestamps.get(key)
+        if timestamp:
+            return timestamp
+        else:
+            return 0
     
 
-    def should_publish(self, key: str, timestamp_to_check: int = time.time()) -> bool:
+    def should_publish(self, key: str, timestamp_to_check: int) -> bool:
         time_since_last_publication_s = timestamp_to_check - self.get_publication_timestamp(key)
         logging.debug(f"Time since last publication: {time_since_last_publication_s}, min interval: {self.http_config.min_publication_interval_s}")
         return time_since_last_publication_s >= self.http_config.min_publication_interval_s
