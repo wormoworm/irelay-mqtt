@@ -109,6 +109,7 @@ class IrelayPublisher:
             channel = int(message.topic[len(TOPIC_FORMAT_ISPINDEL_REPORT_BASE)])
             logging.debug(f"Got channel {channel} from topic")
             report = IspindelReport.parse_raw(str(message.payload, encoding = "utf-8"))
+            report.name = report.name + ",SG"
             self.process_ispindel_report(channel, report)
         elif message.topic == TOPIC_NAUTILIS_REPORT:
             report = NautilisReport.parse_raw(str(message.payload, encoding = "utf-8"))
@@ -177,7 +178,7 @@ if __name__ == "__main__":
         datefmt="[%X]",
         handlers=[RichHandler(omit_repeated_times=False)],
     )
-    http_client.HTTPConnection.debuglevel = 0
+    http_client.HTTPConnection.debuglevel = 2
     requests_log = logging.getLogger("requests.packages.urllib3")
     requests_log.propagate = True
 
