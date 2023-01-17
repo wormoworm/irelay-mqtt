@@ -134,6 +134,12 @@ class IrelayPublisher:
 
     def process_ispindel_report_for_service(self, report: IspindelReport, service: Destination) -> IspindelReport:
         # TODO Value rounding if specified
+        if ROUND_VALUES:
+            logging.debug("Rounding values")
+            report.battery = round(report.battery, 3)
+            report.angle = round(report.angle, 1)
+            report.gravity = round(report.gravity, 3)
+            report.temperature = round(report.temperature, 1)
         if service:
             if service == Destination.GRAINFATHER:
                 report.name = report.name + ",SG"
