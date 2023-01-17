@@ -16,6 +16,7 @@ from model.ispindel import IspindelReport
 from model.nautilis import NautilisReport
 import requests
 import http.client as http_client
+from model.destination import Destination
 
 # TODO: Allow passing of topics via env vars.
 TOPIC_FORMAT_ISPINDEL_REPORT_BASE = "devices/ispindel/channel/"
@@ -23,7 +24,7 @@ TOPIC_FORMAT_ISPINDEL_REPORT= TOPIC_FORMAT_ISPINDEL_REPORT_BASE + "{}/data"
 TOPIC_NAUTILIS_REPORT= "devices/nautilis/data"
 
 MAIN_LOOP_INTERVAL_S = 5
-MAX_ISPINDEL_CHANNELS = 3
+MAX_ISPINDEL_CHANNELS = 2
 
 DEBUG = os.getenv("DEBUG", "True").lower() == "true"
 
@@ -40,6 +41,12 @@ HTTP_PATH_ISPINDEL_CHANNEL_1 = os.getenv("HTTP_PATH_ISPINDEL_CHANNEL_1")
 HTTP_PATH_ISPINDEL_CHANNEL_2 = os.getenv("HTTP_PATH_ISPINDEL_CHANNEL_2")
 HTTP_PATH_NAUTILIS = os.getenv("HTTP_PATH_NAUTILIS")
 HTTP_MIN_PUBLICATION_INTERVAL = os.getenv("HTTP_MIN_PUBLICATION_INTERVAL", default = 15 * 60)
+HTTP_DESTINATION_SERVICE = Destination.from_string(os.getenv("HTTP_DESTINATION_SERVICE"))
+
+# Other config
+ISPINDEL_GRAVITY_OFFSETS = {}
+for channel in range(1, MAX_ISPINDEL_CHANNELS + 1):
+    ISPINDEL_GRAVITY_OFFSETS[channel] = os.getenv(f"GRAVITY_OFFSET_ISPINDEL_CHANNEL_{channel}")
 
 class IrelayPublisher:
 
@@ -56,6 +63,9 @@ class IrelayPublisher:
 
         self.mqtt_config = mqtt_config
         self.http_config = http_config
+
+        if HTTP_DESTINATION_SERVICE:
+            logging.debug(f"Using destination service: {HTTP_DESTINATION_SERVICE.name}")
 
         # Register a function to be invoked when we receive SIGTERM or SIGHUP.
         signal.signal(signal.SIGTERM, self._os_signal_handler)
@@ -108,21 +118,44 @@ class IrelayPublisher:
         if message.topic.startswith(TOPIC_FORMAT_ISPINDEL_REPORT_BASE):
             channel = int(message.topic[len(TOPIC_FORMAT_ISPINDEL_REPORT_BASE)])
             logging.debug(f"Got channel {channel} from topic")
+
+            if channel > MAX_ISPINDEL_CHANNELS:
+                logging.warn(f"Channel {channel} is not supported, maximum number of iSpindel channels is {MAX_ISPINDEL_CHANNELS}")
+                return
+
+            # Create the report from the message payload.
             report = IspindelReport.parse_raw(str(message.payload, encoding = "utf-8"))
-            report.name = report.name + ",SG"
-            self.process_ispindel_report(channel, report)
+
+            # Do any per-service post-processing that is required.
+            report = self.process_ispindel_report_for_service(report, HTTP_DESTINATION_SERVICE)
+
+            # Adjust the gravity offset if required.
+            gravity_offset = ISPINDEL_GRAVITY_OFFSETS[channel]
+            if gravity_offset:
+                logging.debug(f"Will adjust gravity for iSpindel channel {channel} by {gravity_offset}")
+                report.gravity -= gravity_offset
+
+            self.publish_ispindel_report(channel, report)
         elif message.topic == TOPIC_NAUTILIS_REPORT:
             report = NautilisReport.parse_raw(str(message.payload, encoding = "utf-8"))
-            self.process_nautilis_report(report)
+            self.publish_nautilis_report(report)
+    
+
+    def process_ispindel_report_for_service(self, report: IspindelReport, service: Destination) -> IspindelReport:
+        if service:
+            if service == Destination.GRAINFATHER:
+                report.name = report.name + ",SG"
+            elif service == Destination.BREWFATHER:
+                report.name = report.name + "[SG]"
+        return report
 
     
-    def process_ispindel_report(self, channel: int, report: IspindelReport):
+    def publish_ispindel_report(self, channel: int, report: IspindelReport):
         logging.debug(f"Processing iSpindel report for channel {channel}: {report}")
-        if channel > MAX_ISPINDEL_CHANNELS:
-            logging.warn(f"Channel {channel} is not supported, maximum number of iSpindel channels is {MAX_ISPINDEL_CHANNELS}")
-            return
+        
         ispindel_url = self.http_config.get_ispindel_url(channel)
         logging.debug(f"iSpindel URL for channel {channel} is {ispindel_url}")
+        
         if ispindel_url:
             if self.should_publish(ispindel_url, int(time.time())):
                 logging.debug(f"Will publish to {ispindel_url}")
@@ -135,7 +168,7 @@ class IrelayPublisher:
             logging.error(f"Could not get URL for iSpindel with channel {channel}")
     
 
-    def process_nautilis_report(self, report: NautilisReport):
+    def publish_nautilis_report(self, report: NautilisReport):
         logging.debug("Processing Nautilis report")
         nautilis_url = self.http_config.get_nautilis_url()
         if nautilis_url:
