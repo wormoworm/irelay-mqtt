@@ -17,6 +17,7 @@ from model.nautilis import NautilisReport
 import requests
 import http.client as http_client
 from model.destination import Destination
+from constants import MAX_ISPINDEL_CHANNELS
 
 # TODO: Allow passing of topics via env vars.
 TOPIC_FORMAT_ISPINDEL_REPORT_BASE = "devices/ispindel/channel/"
@@ -24,7 +25,6 @@ TOPIC_FORMAT_ISPINDEL_REPORT= TOPIC_FORMAT_ISPINDEL_REPORT_BASE + "{}/data"
 TOPIC_NAUTILIS_REPORT= "devices/nautilis/data"
 
 MAIN_LOOP_INTERVAL_S = 5
-MAX_ISPINDEL_CHANNELS = 2
 
 DEBUG = os.getenv("DEBUG", "True").lower() == "true"
 
@@ -47,7 +47,6 @@ HTTP_DESTINATION_SERVICE = Destination.from_string(os.getenv("HTTP_DESTINATION_S
 class IrelayPublisher:
 
     publication_timestamps = dict()
-    ispindel_gravity_offsets = dict()
     
     def _os_signal_handler(self, signum, frame):
         """Handle OS signal"""
@@ -60,13 +59,6 @@ class IrelayPublisher:
 
         self.mqtt_config = mqtt_config
         self.http_config = http_config
-        
-        ispindel_gravity_offsets = dict()
-        for channel in range(1, MAX_ISPINDEL_CHANNELS + 1):
-            offset = os.getenv(f"GRAVITY_OFFSET_ISPINDEL_CHANNEL_{channel}")
-            if offset:
-                logging.debug(f"Will use offset of {offset} for iSpindel channel {channel}")
-                ispindel_gravity_offsets[channel] = float(offset)
 
         if HTTP_DESTINATION_SERVICE:
             logging.debug(f"Using destination service: {HTTP_DESTINATION_SERVICE.name}")
@@ -132,12 +124,7 @@ class IrelayPublisher:
             # Do any per-service post-processing that is required.
             report = self.process_ispindel_report_for_service(report, HTTP_DESTINATION_SERVICE)
 
-            # Adjust the gravity offset if required.
-            gravity_offset = self.ispindel_gravity_offsets.get(channel)
-            if gravity_offset:
-                logging.debug(f"Will adjust gravity for iSpindel channel {channel} by {gravity_offset}")
-                report.gravity -= gravity_offset
-
+            # Publish the report to the web service.
             self.publish_ispindel_report(channel, report)
         elif message.topic == TOPIC_NAUTILIS_REPORT:
             report = NautilisReport.parse_raw(str(message.payload, encoding = "utf-8"))
@@ -145,6 +132,7 @@ class IrelayPublisher:
     
 
     def process_ispindel_report_for_service(self, report: IspindelReport, service: Destination) -> IspindelReport:
+        # TODO Value rounding if specified
         if service:
             if service == Destination.GRAINFATHER:
                 report.name = report.name + ",SG"
