@@ -126,7 +126,6 @@ class IrelayPublisher:
             if channel > MAX_ISPINDEL_CHANNELS:
                 logging.warn(f"Channel {channel} is not supported, maximum number of iSpindel channels is {MAX_ISPINDEL_CHANNELS}")
                 return
-
             # Create the report from the message payload.
             report = IspindelReport.parse_raw(str(message.payload, encoding = "utf-8"))
 
@@ -134,7 +133,7 @@ class IrelayPublisher:
             report = self.process_ispindel_report_for_service(report, HTTP_DESTINATION_SERVICE)
 
             # Adjust the gravity offset if required.
-            gravity_offset = self.ispindel_gravity_offsets[channel]
+            gravity_offset = self.ispindel_gravity_offsets.get(channel)
             if gravity_offset:
                 logging.debug(f"Will adjust gravity for iSpindel channel {channel} by {gravity_offset}")
                 report.gravity -= gravity_offset
