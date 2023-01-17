@@ -16,10 +16,8 @@ TOPIC_FORMAT_ISPINDEL_REPORT= "devices/ispindel/channel/{}/data"
 TOPIC_NAUTILIS_REPORT= "devices/nautilis/data"
 
 
-
-
-
 DEBUG = os.getenv("DEBUG", "True").lower() == "true"
+ROUND_VALUES = os.getenv("ROUND_VALUES", "True").lower() == "true"
 
 MQTT_ENDPOINT = os.getenv("MQTT_ENDPOINT")
 MQTT_PORT = int(os.getenv("MQTT_PORT"))
@@ -62,6 +60,13 @@ def data_ispindel(report: IspindelReport):
     if gravity_offset:
         logging.debug(f"Will adjust gravity for iSpindel channel {channel} by {gravity_offset}")
         report.gravity += gravity_offset
+    if ROUND_VALUES:
+        logging.debug("Rounding values")
+        report.battery = round(report.battery, 3)
+        report.angle = round(report.angle, 1)
+        report.gravity = round(report.gravity, 3)
+        report.temperature = round(report.temperature, 1)
+        
     if channel:
         logging.debug(f"iSpindel channel is {channel}")
     else:

@@ -27,7 +27,6 @@ TOPIC_NAUTILIS_REPORT= "devices/nautilis/data"
 MAIN_LOOP_INTERVAL_S = 5
 
 DEBUG = os.getenv("DEBUG", "True").lower() == "true"
-ROUND_VALUES = os.getenv("ROUND_VALUES", "True").lower() == "true"
 
 # Get MQTT config from environment variables
 MQTT_ENDPOINT = os.getenv("MQTT_ENDPOINT")
@@ -133,13 +132,6 @@ class IrelayPublisher:
     
 
     def process_ispindel_report_for_service(self, report: IspindelReport, service: Destination) -> IspindelReport:
-        # TODO Value rounding if specified
-        if ROUND_VALUES:
-            logging.debug("Rounding values")
-            report.battery = round(report.battery, 3)
-            report.angle = round(report.angle, 1)
-            report.gravity = round(report.gravity, 3)
-            report.temperature = round(report.temperature, 1)
         if service:
             if service == Destination.GRAINFATHER:
                 report.name = report.name + ",SG"
