@@ -43,14 +43,11 @@ HTTP_PATH_NAUTILIS = os.getenv("HTTP_PATH_NAUTILIS")
 HTTP_MIN_PUBLICATION_INTERVAL = os.getenv("HTTP_MIN_PUBLICATION_INTERVAL", default = 15 * 60)
 HTTP_DESTINATION_SERVICE = Destination.from_string(os.getenv("HTTP_DESTINATION_SERVICE"))
 
-# Other config
-ISPINDEL_GRAVITY_OFFSETS = {}
-for channel in range(1, MAX_ISPINDEL_CHANNELS + 1):
-    ISPINDEL_GRAVITY_OFFSETS[channel] = os.getenv(f"GRAVITY_OFFSET_ISPINDEL_CHANNEL_{channel}")
 
 class IrelayPublisher:
 
     publication_timestamps = dict()
+    ispindel_gravity_offsets = dict()
     
     def _os_signal_handler(self, signum, frame):
         """Handle OS signal"""
@@ -63,6 +60,13 @@ class IrelayPublisher:
 
         self.mqtt_config = mqtt_config
         self.http_config = http_config
+        
+        ispindel_gravity_offsets = dict()
+        for channel in range(1, MAX_ISPINDEL_CHANNELS + 1):
+            offset = os.getenv(f"GRAVITY_OFFSET_ISPINDEL_CHANNEL_{channel}")
+            if offset:
+                logging.debug(f"Will use offset of {offset} for iSpindel channel {channel}")
+                ispindel_gravity_offsets[channel] = float(offset)
 
         if HTTP_DESTINATION_SERVICE:
             logging.debug(f"Using destination service: {HTTP_DESTINATION_SERVICE.name}")
@@ -130,7 +134,7 @@ class IrelayPublisher:
             report = self.process_ispindel_report_for_service(report, HTTP_DESTINATION_SERVICE)
 
             # Adjust the gravity offset if required.
-            gravity_offset = ISPINDEL_GRAVITY_OFFSETS[channel]
+            gravity_offset = self.ispindel_gravity_offsets[channel]
             if gravity_offset:
                 logging.debug(f"Will adjust gravity for iSpindel channel {channel} by {gravity_offset}")
                 report.gravity -= gravity_offset
