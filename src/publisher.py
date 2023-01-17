@@ -27,6 +27,7 @@ TOPIC_NAUTILIS_REPORT= "devices/nautilis/data"
 MAIN_LOOP_INTERVAL_S = 5
 
 DEBUG = os.getenv("DEBUG", "True").lower() == "true"
+ROUND_VALUES = os.getenv("ROUND_VALUES", "True").lower() == "true"
 
 # Get MQTT config from environment variables
 MQTT_ENDPOINT = os.getenv("MQTT_ENDPOINT")
