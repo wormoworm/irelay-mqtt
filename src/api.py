@@ -61,7 +61,7 @@ def data_ispindel(report: IspindelReport):
     gravity_offset = ispindel_gravity_offsets.get(channel)
     if gravity_offset:
         logging.debug(f"Will adjust gravity for iSpindel channel {channel} by {gravity_offset}")
-        report.gravity -= gravity_offset
+        report.gravity += gravity_offset
     if channel:
         logging.debug(f"iSpindel channel is {channel}")
     else:
