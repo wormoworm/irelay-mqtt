@@ -67,7 +67,7 @@ def data_ispindel(report: IspindelReport):
         logging.debug("Rounding values")
         extended_report.battery = round(extended_report.battery, 3)
         extended_report.angle = round(extended_report.angle, 1)
-        extended_report.gravity = round(extended_report.gravity, 3)
+        extended_report.gravity = round(extended_report.gravity, 4)
         extended_report.temperature = round(extended_report.temperature, 1)
         extended_report.battery_percentage = round(extended_report.battery_percentage, 1)
         
