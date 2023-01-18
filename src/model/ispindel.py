@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 ISPINDEL_BATTERY_MIN = 3.0
-ISPINDEL_BATTERY_MAX = 4.0
+ISPINDEL_BATTERY_MAX = 4.1
 
 
 class IspindelReport(BaseModel):
@@ -28,6 +28,7 @@ class ExtendedIspindelReport(IspindelReport):
 
     battery_percentage: float
 
+
     def __init__(self, original_report: IspindelReport):
         # This is rather verbose, but I can't think of a better way to copy the values in from the other Pydantic object.
         super().__init__(
@@ -40,4 +41,10 @@ class ExtendedIspindelReport(IspindelReport):
             gravity = original_report.gravity,
             temperature = original_report.temperature,
             temp_units = original_report.temp_units,
-            battery_percentage = ((original_report.battery - ISPINDEL_BATTERY_MIN) / (ISPINDEL_BATTERY_MAX - ISPINDEL_BATTERY_MIN)) * 100)
+            battery_percentage = self._calculate_battery_percentage(original_report.battery)
+        )
+    
+
+    def _calculate_battery_percentage(self, battery_voltage) -> float:
+        percentage_raw = ((battery_voltage - ISPINDEL_BATTERY_MIN) / (ISPINDEL_BATTERY_MAX - ISPINDEL_BATTERY_MIN)) * 100
+        return min(max(0, percentage_raw), 100)
