@@ -85,17 +85,17 @@ def data_ispindel(report: IspindelReport):
     return '{"message": "ok"}'
 
 
+# @app.post("/api/nautilis")
+# def nautilis(report: NautilisReport):
+#     logging.debug(f"Nautilis report: {json.dumps(report.dict(), indent=4)}")
+#     if connect_to_mqtt():
+#         mqtt_client.publish(topic = TOPIC_NAUTILIS_REPORT, payload = json.dumps(report.dict()), qos = 1)
+#         disconnect_from_mqtt()
+#     # TODO Return error code if MQTT connection failed.
+#     return '{"message": "ok"}'
+
+
 @app.post("/api/nautilis")
-def nautilis(report: NautilisReport):
-    logging.debug(f"Nautilis report: {json.dumps(report.dict(), indent=4)}")
-    if connect_to_mqtt():
-        mqtt_client.publish(topic = TOPIC_NAUTILIS_REPORT, payload = json.dumps(report.dict()), qos = 1)
-        disconnect_from_mqtt()
-    # TODO Return error code if MQTT connection failed.
-    return '{"message": "ok"}'
-
-
-@app.post("/test")
 def dummy(request_dict: Union[List,Dict,Any] = None):
     logging.warn(f"/test: {request_dict}")
     return {"a": "b"}
