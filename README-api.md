@@ -65,7 +65,7 @@ Below is a full a list of the configuration options that can be set via environm
 - `MQTT_CLIENT_ID`: A (unique name) that identifies this service to the MQTT broker.
 - `MQTT_USERNAME`: Username for connecting to MQTT.
 - `MQTT_PASSWORD`: Password for connecting to MQTT.
-- `MQTT_TOPIC_ISPINDEL_CHANNEL_1`: TODO (and in code)
+- `MQTT_TOPIC_ISPINDEL_CHANNEL_1`: TODO
 - `MQTT_TOPIC_ISPINDEL_CHANNEL_2`: TODO
 - `MQTT_TOPIC_ISPINDEL_NAUTILIS`: TODO
 - `GRAVITY_OFFSET_ISPINDEL_CHANNEL_1`: Gravity offset to apply to readings for the iSpindel reporting on channel 1. This is provided because if you set an offset on the iRelay, it is only applied to the number shown on the screen, not the values transmitted to the destination web srvice. This option allows you to adjust the transmitted values by the same amount, so the data will match what's shown on the iRelay's screen.
