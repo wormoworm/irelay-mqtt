@@ -13,7 +13,7 @@ from paho.mqtt.client import Client
 from model.mqtt_config import MqttConfig
 from model.http_config import HttpConfig
 from model.ispindel import IspindelReport
-from model.nautilis import NautilisReport
+from model.nautilis import NautilisReport, NautilisReportGrainfather, NautilisReportBrewfather
 import requests
 import http.client as http_client
 from model.destination import Destination
@@ -40,7 +40,6 @@ HTTP_PATH_ISPINDEL_CHANNEL_2 = os.getenv("HTTP_PATH_ISPINDEL_CHANNEL_2")
 HTTP_PATH_NAUTILIS = os.getenv("HTTP_PATH_NAUTILIS")
 HTTP_MIN_PUBLICATION_INTERVAL = os.getenv("HTTP_MIN_PUBLICATION_INTERVAL", default = 15 * 60)
 HTTP_DESTINATION_SERVICE = Destination.from_string(os.getenv("HTTP_DESTINATION_SERVICE"))
-
 
 class IrelayPublisher:
 
@@ -112,7 +111,7 @@ class IrelayPublisher:
         for channel in range(1, MAX_ISPINDEL_CHANNELS + 1):
             topic = TOPIC_FORMAT_ISPINDEL_REPORT.format(channel)
             if message.topic == topic:
-                logging.debug(f"Processing iSpindel channel {channel}")
+                logging.debug(f"Processing iSpindel report for channel {channel}")
                 # Create the report from the message payload.
                 report = IspindelReport.parse_raw(str(message.payload, encoding = "utf-8"))
 
@@ -123,8 +122,12 @@ class IrelayPublisher:
                 self.publish_ispindel_report(channel, report)
                 return
         if message.topic == TOPIC_NAUTILIS_REPORT:
+            logging.debug("Processing Nautilis report")
             report = NautilisReport.parse_raw(str(message.payload, encoding = "utf-8"))
-            self.publish_nautilis_report(report)
+            # Transform the report into the model required by the selected service.
+            service_report = self.process_nautilis_report_for_service(report, HTTP_DESTINATION_SERVICE)
+            if service_report:
+                self.publish_nautilis_report(service_report)
     
 
     def process_ispindel_report_for_service(self, report: IspindelReport, service: Destination) -> IspindelReport:
@@ -135,10 +138,17 @@ class IrelayPublisher:
                 report.name = report.name + "[SG]"
         return report
 
+
+    def process_nautilis_report_for_service(self, report: NautilisReport, service: Destination) -> BaseModel:
+        if service:
+            if service == Destination.GRAINFATHER:
+                return NautilisReportGrainfather(report)
+            elif service == Destination.BREWFATHER:
+                return NautilisReportBrewfather(report)
+        return report
+
     
     def publish_ispindel_report(self, channel: int, report: IspindelReport):
-        logging.debug(f"Processing iSpindel report for channel {channel}: {report}")
-        
         ispindel_url = self.http_config.get_ispindel_url(channel)
         logging.debug(f"iSpindel URL for channel {channel} is {ispindel_url}")
         
@@ -154,8 +164,7 @@ class IrelayPublisher:
             logging.error(f"Could not get URL for iSpindel with channel {channel}")
     
 
-    def publish_nautilis_report(self, report: NautilisReport):
-        logging.debug("Processing Nautilis report")
+    def publish_nautilis_report(self, report: BaseModel):
         nautilis_url = self.http_config.get_nautilis_url()
         if nautilis_url:
             if self.should_publish(nautilis_url, int(time.time())):
@@ -197,9 +206,15 @@ if __name__ == "__main__":
         datefmt="[%X]",
         handlers=[RichHandler(omit_repeated_times=False)],
     )
-    http_client.HTTPConnection.debuglevel = 2
+
+    # Exit if destination not supported
+    if not HTTP_DESTINATION_SERVICE:
+        logging.error("HTTP_DESTINATION_SERVICE must be set, exiting...")
+        sys.exit()
+
     requests_log = logging.getLogger("requests.packages.urllib3")
     requests_log.propagate = True
+    http_client.HTTPConnection.debuglevel = 2
 
     mqtt_config = MqttConfig(MQTT_ENDPOINT, MQTT_PORT, MQTT_CLIENT_ID, MQTT_USERNAME, MQTT_PASSWORD)
 
