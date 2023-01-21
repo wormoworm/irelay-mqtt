@@ -19,10 +19,8 @@ import http.client as http_client
 from model.destination import Destination
 from constants import MAX_ISPINDEL_CHANNELS
 
-# TODO: Allow passing of topics via env vars.
-TOPIC_FORMAT_ISPINDEL_REPORT_BASE = "devices/ispindel/channel/"
-TOPIC_FORMAT_ISPINDEL_REPORT= TOPIC_FORMAT_ISPINDEL_REPORT_BASE + "{}/data"
-TOPIC_NAUTILIS_REPORT= "devices/nautilis/data"
+TOPIC_FORMAT_ISPINDEL_REPORT = os.getenv("TOPIC_FORMAT_ISPINDEL_REPORT")
+TOPIC_NAUTILIS_REPORT= os.getenv("TOPIC_NAUTILIS_REPORT")
 
 MAIN_LOOP_INTERVAL_S = 5
 

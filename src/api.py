@@ -11,10 +11,8 @@ from model.ispindel import IspindelReport, ExtendedIspindelReport
 from model.nautilis import NautilisReport
 from constants import MAX_ISPINDEL_CHANNELS
 
-# TODO: Allow passing of topics via env vars.
-TOPIC_FORMAT_ISPINDEL_REPORT= "devices/ispindel/channel/{}/data"
-TOPIC_NAUTILIS_REPORT= "devices/nautilis/data"
-
+TOPIC_FORMAT_ISPINDEL_REPORT = os.getenv("TOPIC_FORMAT_ISPINDEL_REPORT")
+TOPIC_NAUTILIS_REPORT= os.getenv("TOPIC_NAUTILIS_REPORT")
 
 DEBUG = os.getenv("DEBUG", "True").lower() == "true"
 ROUND_VALUES = os.getenv("ROUND_VALUES", "True").lower() == "true"
