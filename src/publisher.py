@@ -19,6 +19,7 @@ import http.client as http_client
 from model.destination import Destination
 from constants import MAX_ISPINDEL_CHANNELS
 
+TOPIC_FORMAT_ISPINDEL_REPORT_BASE = "devices/ispindel/channel/" # TODO Remove this hard-coding
 TOPIC_FORMAT_ISPINDEL_REPORT = os.getenv("TOPIC_FORMAT_ISPINDEL_REPORT")
 TOPIC_NAUTILIS_REPORT= os.getenv("TOPIC_NAUTILIS_REPORT")
 

@@ -24,7 +24,7 @@ I prefer to use `docker-compose` to run containers. A full compose file for both
 ```yaml
 version: "2.2"
 services:
-  api:
+  irelay-api:
     image: tomhomewood/irelay-mqtt:latest
     container_name: irelay-mqtt
     restart: unless-stopped
