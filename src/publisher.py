@@ -19,7 +19,6 @@ import http.client as http_client
 from model.destination import Destination
 from constants import MAX_ISPINDEL_CHANNELS
 
-TOPIC_FORMAT_ISPINDEL_REPORT_BASE = "devices/ispindel/channel/" # TODO Remove this hard-coding
 TOPIC_FORMAT_ISPINDEL_REPORT = os.getenv("TOPIC_FORMAT_ISPINDEL_REPORT")
 TOPIC_NAUTILIS_REPORT= os.getenv("TOPIC_NAUTILIS_REPORT")
 
@@ -110,22 +109,20 @@ class IrelayPublisher:
     
     def on_message_received(self, client, userdata, message):
         print(f"Message received on topic: {message.topic}")
-        if message.topic.startswith(TOPIC_FORMAT_ISPINDEL_REPORT_BASE):
-            channel = int(message.topic[len(TOPIC_FORMAT_ISPINDEL_REPORT_BASE)])
-            logging.debug(f"Got channel {channel} from topic")
+        for channel in range(1, MAX_ISPINDEL_CHANNELS + 1):
+            topic = TOPIC_FORMAT_ISPINDEL_REPORT.format(channel)
+            if message.topic == topic:
+                logging.debug(f"Processing iSpindel channel {channel}")
+                # Create the report from the message payload.
+                report = IspindelReport.parse_raw(str(message.payload, encoding = "utf-8"))
 
-            if channel > MAX_ISPINDEL_CHANNELS:
-                logging.warn(f"Channel {channel} is not supported, maximum number of iSpindel channels is {MAX_ISPINDEL_CHANNELS}")
+                # Do any per-service post-processing that is required.
+                report = self.process_ispindel_report_for_service(report, HTTP_DESTINATION_SERVICE)
+
+                # Publish the report to the web service.
+                self.publish_ispindel_report(channel, report)
                 return
-            # Create the report from the message payload.
-            report = IspindelReport.parse_raw(str(message.payload, encoding = "utf-8"))
-
-            # Do any per-service post-processing that is required.
-            report = self.process_ispindel_report_for_service(report, HTTP_DESTINATION_SERVICE)
-
-            # Publish the report to the web service.
-            self.publish_ispindel_report(channel, report)
-        elif message.topic == TOPIC_NAUTILIS_REPORT:
+        if message.topic == TOPIC_NAUTILIS_REPORT:
             report = NautilisReport.parse_raw(str(message.payload, encoding = "utf-8"))
             self.publish_nautilis_report(report)
     
