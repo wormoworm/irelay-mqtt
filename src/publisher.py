@@ -13,11 +13,12 @@ from paho.mqtt.client import Client
 from model.mqtt_config import MqttConfig
 from model.http_config import HttpConfig
 from model.ispindel import IspindelReport
-from model.nautilis import NautilisReport, NautilisReportGrainfather, NautilisReportBrewfather
+from model.nautilis import NautilisReport, NautilisReportGrainfather, NautilisReportBrewfather, TemperatureUnit
 import requests
 import http.client as http_client
 from model.destination import Destination
 from constants import MAX_ISPINDEL_CHANNELS
+
 
 TOPIC_FORMAT_ISPINDEL_REPORT = os.getenv("TOPIC_FORMAT_ISPINDEL_REPORT")
 TOPIC_NAUTILIS_REPORT= os.getenv("TOPIC_NAUTILIS_REPORT")
@@ -124,6 +125,7 @@ class IrelayPublisher:
         if message.topic == TOPIC_NAUTILIS_REPORT:
             logging.debug("Processing Nautilis report")
             report = NautilisReport.parse_raw(str(message.payload, encoding = "utf-8"))
+            logging.debug(f"Raw report JSON: {json.dumps(report.dict())}")
             # Transform the report into the model required by the selected service.
             service_report = self.process_nautilis_report_for_service(report, HTTP_DESTINATION_SERVICE)
             if service_report:

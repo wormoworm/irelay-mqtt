@@ -1,10 +1,25 @@
 from pydantic import BaseModel
+from enum import Enum
+import os
+
+class TemperatureUnit(str, Enum):
+    Celsius = "celsius"
+    Fahrenheit = "fahrenheit"
+
+    def short_value(self) -> str:
+        if self == TemperatureUnit.Celsius:
+            return "C"
+        elif self == TemperatureUnit.Fahrenheit:
+            return "F"
 
 
 class NautilisReport(BaseModel):
     temperature: float
-    unit: str
+    unit: TemperatureUnit
     token: str
+
+    class Config:
+        use_enum_values = True
 
 
 class NautilisReportGrainfather(BaseModel):
@@ -26,6 +41,6 @@ class NautilisReportBrewfather(BaseModel):
 
     def __init__(self, nautilis_report: NautilisReport):
         super().__init__(
-            name = "iRelay",    # TODO: Make this configurable?
+            name = os.getenv("IRELAY_NAME", default = "iRelay"),
             aux_temp = nautilis_report.temperature,
-            temp_unit = "C" if nautilis_report.unit == "celsius" else "F" ) # TODO: Use an enum to make this smarter?
+            temp_unit = TemperatureUnit(nautilis_report.unit).short_value())
