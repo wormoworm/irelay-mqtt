@@ -13,7 +13,7 @@ class TemperatureUnit(str, Enum):
             return "F"
 
 
-class NautilisReport(BaseModel):
+class IrelayReport(BaseModel):
     temperature: float
     unit: TemperatureUnit
     token: str
@@ -22,25 +22,25 @@ class NautilisReport(BaseModel):
         use_enum_values = True
 
 
-class NautilisReportGrainfather(BaseModel):
+class IrelayReportGrainfather(BaseModel):
     specific_gravity: float = 0.0
     temperature: float
     unit: str
 
-    def __init__(self, nautilis_report: NautilisReport):
+    def __init__(self, irelay_report: IrelayReport):
         super().__init__(
             specific_gravity = 0,
-            temperature = nautilis_report.temperature,
-            unit = nautilis_report.unit)
+            temperature = irelay_report.temperature,
+            unit = irelay_report.unit)
 
 
-class NautilisReportBrewfather(BaseModel):
+class IrelayReportBrewfather(BaseModel):
     name: str
     aux_temp: float
     temp_unit: str
 
-    def __init__(self, nautilis_report: NautilisReport):
+    def __init__(self, irelay_report: IrelayReport):
         super().__init__(
             name = os.getenv("IRELAY_NAME", default = "iRelay"),
-            aux_temp = nautilis_report.temperature,
-            temp_unit = TemperatureUnit(nautilis_report.unit).short_value())
+            aux_temp = irelay_report.temperature,
+            temp_unit = TemperatureUnit(irelay_report.unit).short_value())

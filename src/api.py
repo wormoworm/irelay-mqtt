@@ -8,11 +8,8 @@ import os
 from paho.mqtt.client import Client
 from model.mqtt_config import MqttConfig
 from model.ispindel import IspindelReport, ExtendedIspindelReport
-from model.nautilis import NautilisReport
+from model.irelay import IrelayReport
 from constants import MAX_ISPINDEL_CHANNELS
-
-TOPIC_FORMAT_ISPINDEL_REPORT = os.getenv("TOPIC_FORMAT_ISPINDEL_REPORT")
-TOPIC_NAUTILIS_REPORT= os.getenv("TOPIC_NAUTILIS_REPORT")
 
 DEBUG = os.getenv("DEBUG", "True").lower() == "true"
 ROUND_VALUES = os.getenv("ROUND_VALUES", "True").lower() == "true"
@@ -22,6 +19,8 @@ MQTT_PORT = int(os.getenv("MQTT_PORT"))
 MQTT_CLIENT_ID = os.getenv("MQTT_CLIENT_ID", default = "irelay_mqtt")
 MQTT_USERNAME = os.getenv("MQTT_USERNAME")
 MQTT_PASSWORD = os.getenv("MQTT_PASSWORD")
+TOPIC_FORMAT_ISPINDEL_REPORT = os.getenv("TOPIC_FORMAT_ISPINDEL_REPORT")
+TOPIC_IRELAY_REPORT= os.getenv("TOPIC_IRELAY_REPORT")
 
 app = FastAPI()
 logging.basicConfig(
@@ -83,11 +82,11 @@ def data_ispindel(report: IspindelReport):
     return '{"message": "ok"}'
 
 
-@app.post("/api/nautilis")
-def nautilis(report: NautilisReport):
-    logging.debug(f"Nautilis report: {json.dumps(report.dict(), indent=4)}")
+@app.post("/api/irelay")
+def irelay(report: IrelayReport):
+    logging.debug(f"iRelay report: {json.dumps(report.dict(), indent=4)}")
     if connect_to_mqtt():
-        mqtt_client.publish(topic = TOPIC_NAUTILIS_REPORT, payload = json.dumps(report.dict()), qos = 1)
+        mqtt_client.publish(topic = TOPIC_IRELAY_REPORT, payload = json.dumps(report.dict()), qos = 1)
         disconnect_from_mqtt()
     # TODO Return error code if MQTT connection failed.
     return '{"message": "ok"}'
@@ -96,8 +95,4 @@ def nautilis(report: NautilisReport):
 @app.post("/test")
 def dummy(request_dict: Union[List,Dict,Any] = None):
     logging.warn(f"/test: {request_dict}")
-    return {"a": "b"}
-
-
-# def calculate_extra_fields(report_dict: dict) -> dict:
-#     report_dict["battery_percentage"] = 
+    return {"dummy": "response"}

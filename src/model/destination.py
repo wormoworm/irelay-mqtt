@@ -1,8 +1,8 @@
 from enum import Enum
 
 class Destination(Enum):
-    GRAINFATHER = "grainfather"
     BREWFATHER = "brewfather"
+    GRAINFATHER = "grainfather"
 
     def from_string(value: str):
         if value:

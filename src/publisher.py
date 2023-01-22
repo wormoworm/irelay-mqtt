@@ -13,15 +13,12 @@ from paho.mqtt.client import Client
 from model.mqtt_config import MqttConfig
 from model.http_config import HttpConfig
 from model.ispindel import IspindelReport
-from model.nautilis import NautilisReport, NautilisReportGrainfather, NautilisReportBrewfather, TemperatureUnit
+from model.irelay import IrelayReport, IrelayReportGrainfather, IrelayReportBrewfather, TemperatureUnit
 import requests
 import http.client as http_client
 from model.destination import Destination
 from constants import MAX_ISPINDEL_CHANNELS
 
-
-TOPIC_FORMAT_ISPINDEL_REPORT = os.getenv("TOPIC_FORMAT_ISPINDEL_REPORT")
-TOPIC_NAUTILIS_REPORT= os.getenv("TOPIC_NAUTILIS_REPORT")
 
 MAIN_LOOP_INTERVAL_S = 5
 
@@ -33,12 +30,14 @@ MQTT_PORT = int(os.getenv("MQTT_PORT"))
 MQTT_CLIENT_ID = os.getenv("MQTT_CLIENT_ID", default = "irelay_publisher")
 MQTT_USERNAME = os.getenv("MQTT_USERNAME")
 MQTT_PASSWORD = os.getenv("MQTT_PASSWORD")
+TOPIC_FORMAT_ISPINDEL_REPORT = os.getenv("TOPIC_FORMAT_ISPINDEL_REPORT")
+TOPIC_IRELAY_REPORT= os.getenv("TOPIC_IRELAY_REPORT")
 
 # Get HTTP config from environment variables
 HTTP_ENDPOINT = os.getenv("HTTP_ENDPOINT")
 HTTP_PATH_ISPINDEL_CHANNEL_1 = os.getenv("HTTP_PATH_ISPINDEL_CHANNEL_1")
 HTTP_PATH_ISPINDEL_CHANNEL_2 = os.getenv("HTTP_PATH_ISPINDEL_CHANNEL_2")
-HTTP_PATH_NAUTILIS = os.getenv("HTTP_PATH_NAUTILIS")
+HTTP_PATH_IRELAY = os.getenv("HTTP_PATH_IRELAY")
 HTTP_MIN_PUBLICATION_INTERVAL = os.getenv("HTTP_MIN_PUBLICATION_INTERVAL", default = 15 * 60)
 HTTP_DESTINATION_SERVICE = Destination.from_string(os.getenv("HTTP_DESTINATION_SERVICE"))
 
@@ -104,7 +103,7 @@ class IrelayPublisher:
     def subscribe_to_mqtt_topics(self):
         for channel in range(1, MAX_ISPINDEL_CHANNELS + 1):
             self.mqtt_client.subscribe(topic = TOPIC_FORMAT_ISPINDEL_REPORT.format(channel), qos = 1)
-        self.mqtt_client.subscribe(topic = TOPIC_NAUTILIS_REPORT, qos = 1)
+        self.mqtt_client.subscribe(topic = TOPIC_IRELAY_REPORT, qos = 1)
         
     
     def on_message_received(self, client, userdata, message):
@@ -122,14 +121,14 @@ class IrelayPublisher:
                 # Publish the report to the web service.
                 self.publish_ispindel_report(channel, report)
                 return
-        if message.topic == TOPIC_NAUTILIS_REPORT:
-            logging.debug("Processing Nautilis report")
-            report = NautilisReport.parse_raw(str(message.payload, encoding = "utf-8"))
+        if message.topic == TOPIC_IRELAY_REPORT:
+            logging.debug("Processing Irelay report")
+            report = IrelayReport.parse_raw(str(message.payload, encoding = "utf-8"))
             logging.debug(f"Raw report JSON: {json.dumps(report.dict())}")
             # Transform the report into the model required by the selected service.
-            service_report = self.process_nautilis_report_for_service(report, HTTP_DESTINATION_SERVICE)
+            service_report = self.process_irelay_report_for_service(report, HTTP_DESTINATION_SERVICE)
             if service_report:
-                self.publish_nautilis_report(service_report)
+                self.publish_irelay_report(service_report)
     
 
     def process_ispindel_report_for_service(self, report: IspindelReport, service: Destination) -> IspindelReport:
@@ -141,12 +140,12 @@ class IrelayPublisher:
         return report
 
 
-    def process_nautilis_report_for_service(self, report: NautilisReport, service: Destination) -> BaseModel:
+    def process_irelay_report_for_service(self, report: IrelayReport, service: Destination) -> BaseModel:
         if service:
             if service == Destination.GRAINFATHER:
-                return NautilisReportGrainfather(report)
+                return IrelayReportGrainfather(report)
             elif service == Destination.BREWFATHER:
-                return NautilisReportBrewfather(report)
+                return IrelayReportBrewfather(report)
         return report
 
     
@@ -166,18 +165,18 @@ class IrelayPublisher:
             logging.error(f"Could not get URL for iSpindel with channel {channel}")
     
 
-    def publish_nautilis_report(self, report: BaseModel):
-        nautilis_url = self.http_config.get_nautilis_url()
-        if nautilis_url:
-            if self.should_publish(nautilis_url, int(time.time())):
-                logging.debug(f"Will publish to {nautilis_url}")
-                response = requests.post(url = nautilis_url, data = json.dumps(report.dict()), headers={"Content-Type":"application/json"})
+    def publish_irelay_report(self, report: BaseModel):
+        irelay_url = self.http_config.get_irelay_url()
+        if irelay_url:
+            if self.should_publish(irelay_url, int(time.time())):
+                logging.debug(f"Will publish to {irelay_url}")
+                response = requests.post(url = irelay_url, data = json.dumps(report.dict()), headers={"Content-Type":"application/json"})
                 logging.debug(f"Response code from server: {response.status_code}")
-                self.set_publication_timestamp(nautilis_url, int(time.time()))
+                self.set_publication_timestamp(irelay_url, int(time.time()))
             else:
-                logging.debug(f"Skipped publication for URL {nautilis_url}.")
+                logging.debug(f"Skipped publication for URL {irelay_url}.")
         else:
-            logging.error(f"Could not get URL for Nautilis")
+            logging.error(f"Could not get URL for Irelay")
     
 
     def set_publication_timestamp(self, key: str, timestamp: int):
@@ -224,6 +223,6 @@ if __name__ == "__main__":
         "1": HTTP_PATH_ISPINDEL_CHANNEL_1,
         "2": HTTP_PATH_ISPINDEL_CHANNEL_2
     }
-    http_config = HttpConfig(HTTP_ENDPOINT, ispindel_http_paths, HTTP_PATH_NAUTILIS, HTTP_MIN_PUBLICATION_INTERVAL)
+    http_config = HttpConfig(HTTP_ENDPOINT, ispindel_http_paths, HTTP_PATH_IRELAY, HTTP_MIN_PUBLICATION_INTERVAL)
 
     linakMqtt = IrelayPublisher(mqtt_config, http_config)

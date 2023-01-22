@@ -1,10 +1,10 @@
 class HttpConfig:
     """Contains config data used when publishing data via HTTP."""
 
-    def __init__(self, endpoint: str, ispindel_paths: dict, nautilis_path: str, min_publication_interval_s: int) -> None:
+    def __init__(self, endpoint: str, ispindel_paths: dict, irelay_path: str, min_publication_interval_s: int) -> None:
         self.endpoint = endpoint
         self.ispindel_paths = ispindel_paths
-        self.nautilis_path = nautilis_path
+        self.irelay_path = irelay_path
         self.min_publication_interval_s = min_publication_interval_s
 
     
@@ -23,5 +23,5 @@ class HttpConfig:
             return None
 
 
-    def get_nautilis_url(self, https: bool = True) -> str:
-        return self.get_endpoint_url_with_protocol(https) + self.nautilis_path
+    def get_irelay_url(self, https: bool = True) -> str:
+        return self.get_endpoint_url_with_protocol(https) + self.irelay_path
