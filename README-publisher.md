@@ -58,7 +58,7 @@ Below is a full a list of the configuration options that can be set via environm
 - `MQTT_USERNAME`: Username for connecting to MQTT.
 - `MQTT_PASSWORD`: Password for connecting to MQTT.
 - `TOPIC_FORMAT_ISPINDEL_REPORT`: MQTT topic format for receiving iSpindel data. This should be a pre-formatted Python string that contains one (and only one) variable placeholder. This placeholder will be substituted with the channel number when subscribing to data updates. For example, providing the topic format `devices/ispindel/{}/data` will result in data from iSpindel channel 1 being received on `devices/ispindel/1/data`.
-- `MQTT_TOPIC_IRELAY`REPORT`: Topic for receiving iRelay data.
+- `MQTT_TOPIC_IRELAY_REPORT`: Topic for receiving iRelay data.
 - `HTTP_ENDPOINT`: Base endpoint to publish data to (e.g. `community.grainfather.com` for Grainfather).
 - `HTTP_PATH_ISPINDEL_CHANNEL_1`: API path to send data to for iSpindel channel 1. This will be different for each service, - see the instructions provided by your service for setting up an iSpindel.
 - `HTTP_PATH_ISPINDEL_CHANNEL_1`: API path to send data to for iSpindel channel 2.

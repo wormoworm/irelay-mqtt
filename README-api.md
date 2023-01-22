@@ -56,7 +56,6 @@ The iRelay must be configured to send data to the iRelay. Since there is no dedi
 # Example Docker compose file
  See the `irelay-mqtt` service in the [provided compose file](/docker/docker-compose-example.yml) for an example.
 
-
 Note that to use this server, you will need to add a manual DNS entry or hostname mapping in your network's router or DNS server. 
 
 # Configuration options
