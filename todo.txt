@@ -1,5 +1,0 @@
-Readme
-
-Code tidy up
-
-Return codes in case of error
