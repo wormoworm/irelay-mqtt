@@ -83,6 +83,7 @@ def data_ispindel(report: IspindelReport):
 
 
 @app.post("/api/irelay")
+@app.post("/api/nautilis")  # I shouldn't need this, but my iRelay seems to be "stuck" using this address, no matter what I set in config!
 def irelay(report: IrelayReport):
     logging.debug(f"iRelay report: {json.dumps(report.dict(), indent=4)}")
     if connect_to_mqtt():
