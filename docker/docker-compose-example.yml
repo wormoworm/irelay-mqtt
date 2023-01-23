@@ -1,7 +1,7 @@
 # Example compose file for the JMRI roster application stack.
 version: "2.2"
 services:
-  irelay-api:
+  irelay-mqtt:
     image: tomhomewood/irelay-mqtt:latest
     container_name: irelay-mqtt
     restart: unless-stopped
@@ -11,6 +11,25 @@ services:
       - MQTT_CLIENT_ID=irelay_mqtt
       - MQTT_USERNAME=<username>
       - MQTT_PASSWORD=<password>
-      - GRAVITY_OFFSET_ISPINDEL_CHANNEL_1=-.006
+      - TOPIC_FORMAT_ISPINDEL_REPORT=devices/ispindel/channel/{}/data
+      - TOPIC_IRELAY_REPORT=devices/irelay/data
+      - GRAVITY_OFFSET_ISPINDEL_CHANNEL_1=-0.005
       - ROUND_VALUES=true
+    network_mode: "host"
+  irelay-mqtt-publisher:
+    image: tomhomewood/irelay-mqtt-publisher:latest
+    container_name: irelay-mqtt-publisher
+    restart: unless-stopped
+    environment:
+      - MQTT_ENDPOINT=<broker_address_or_hostname>
+      - MQTT_PORT=<broker_port>
+      - MQTT_CLIENT_ID=irelay_mqtt_publisher
+      - MQTT_USERNAME=<username>
+      - MQTT_PASSWORD=<password>
+      - TOPIC_FORMAT_ISPINDEL_REPORT=devices/ispindel/channel/{}/data
+      - TOPIC_IRELAY_REPORT=devices/irelay/data
+      - HTTP_DESTINATION_SERVICE=grainfather
+      - HTTP_ENDPOINT=community.grainfather.com
+      - HTTP_PATH_ISPINDEL_CHANNEL_1=<ispindel_data_path>
+      - HTTP_PATH_IRELAY=<custom_data_path>
     network_mode: "host"

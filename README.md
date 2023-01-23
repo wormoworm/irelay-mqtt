@@ -14,7 +14,7 @@ Two services are provided:
 # Why is this useful?
 There are two ways in which you can use these tools:
 1. By using only the HTTP API, you can capture all data sent from the iRelay and publish it to an MQTT broker. It is then up to you what you do with the data. For example, you might choose to consume it in Home Assistant.
-2. In addition, by also using the publisher, you can forward any captured data to another party service that accepts data via HTTP. In this way, you can have your cake and eat it - the iRelay data gets published to the service of your choice (Brewfather, Grainfather, or any other non-paternal brewing management service), and you get access to it via MQTT.
+2. In addition, by also using the publisher, you can forward any captured data to another service that accepts data via HTTP. In this way, you can have your cake and eat it - the iRelay data gets published to the service of your choice (Brewfather, Grainfather, or any other non-paternal brewing management service), and you get access to it via MQTT.
 
 # How do I set this up?
 Refer to the [HTTP server](/README-api.md) and [publisher](/README-publisher.md) READMEs for instructions on how to set up each tool.
