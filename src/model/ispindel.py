@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
-ISPINDEL_BATTERY_MIN = 3.0
-ISPINDEL_BATTERY_MAX = 4.1
+ISPINDEL_BATTERY_MIN = 3.3
+ISPINDEL_BATTERY_MAX = 4.2
 
 
 class IspindelReport(BaseModel):
